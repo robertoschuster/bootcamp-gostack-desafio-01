@@ -1,109 +1,78 @@
-const express = require('express');
+/**
+ * @description Api de cadastro de projetos e suas tarefas, conforme orientações
+ * no desafio 01 do bootcamp GoStack da Rocketseat.
+ * 
+ * @author Roberto Schuster
+ * @date 01/02/2020
+ * 
+ */
 
+const express = require("express");
 const server = express();
-
 server.use(express.json());
 
-/**
- * A variável `projects` pode ser `const` porque um `array`
- * pode receber adições ou exclusões mesmo sendo uma constante.
- */
-const projects = [];
+// array de projetos
+const projects = [
+  { id: "0", title: "Projeto 0", tasks: ["Tarefa A", "Tarefa B", "Tarefa C"] },
+  { id: "1", title: "Projeto 1", tasks: ["Tarefa D", "Tarefa E", "Tarefa F"] },
+  { id: "2", title: "Projeto 2", tasks: ["Tarefa G", "Tarefa H", "Tarefa I"] },
+];
 
-/**
- * Middleware que checa se o projeto existe
- */
-function checkProjectExists(req, res, next) {
-  const { id } = req.params;
-  const project = projects.find(p => p.id == id);
+/******************************************************************************
+ * 
+ * Middlewares
+ *  
+ ******************************************************************************/
+function checkProjectRequiredParams(req, res, next) {
 
-  if (!project) {
-    return res.status(400).json({ error: 'Project not found' });
+  const { id, title, tasks } = req.body;
+
+  if (!id) {
+    return res.status(400).json("Id is required.");
+  }
+  if (!title) {
+    return res.status(400).json("Title is required.");
+  }
+  if (!tasks) {
+    res.status(400).json("Tasks is required.");
   }
 
   return next();
+
 }
 
-/**
- * Middleware que dá log no número de requisições
- */
-function logRequests(req, res, next) {
+/******************************************************************************
+ * 
+ * Routes
+ *  
+ ******************************************************************************/
 
-  console.count("Número de requisições");
-
-  return next();
-}
-
-server.use(logRequests);
-
-/**
- * Retorna todos os projetos
- */
+// GET
 server.get('/projects', (req, res) => {
+  
+  res.json(projects);
+
+})
+
+// POST
+server.post('/projects', checkProjectRequiredParams, (req, res) => {
+
+  const { id, title, tasks } = req.body;
+  projects.push({ id, title, tasks });
+  
   return res.json(projects);
-});
 
-/**
- * Request body: id, title
- * Cadastra um novo projeto
- */
-server.post('/projects', (req, res) => {
-  const { id, title } = req.body;
+})
 
-  const project = {
-    id,
-    title,
-    tasks: []
-  };
+// PUT
+server.put('/projects/:id', checkProjectRequiredParams, (req, res) => {
 
-  projects.push(project);
+  const { id, title, tasks } = req.body;
+  projects.push({ id, title, tasks });
+  
+  return res.json(projects);
 
-  return res.json(project);
-});
+})
 
-/**
- * Route params: id
- * Request body: title
- * Altera o título do projeto com o id presente nos parâmetros da rota.
- */
-server.put('/projects/:id', checkProjectExists, (req, res) => {
-  const { id } = req.params;
-  const { title } = req.body;
 
-  const project = projects.find(p => p.id == id);
-
-  project.title = title;
-
-  return res.json(project);
-});
-
-/**
- * Route params: id
- * Deleta o projeto associado ao id presente nos parâmetros da rota.
- */
-server.delete('/projects/:id', checkProjectExists, (req, res) => {
-  const { id } = req.params;
-
-  const projectIndex = projects.findIndex(p => p.id == id);
-
-  projects.splice(projectIndex, 1);
-
-  return res.send();
-});
-
-/**
- * Route params: id;
- * Adiciona uma nova tarefa no projeto escolhido via id; 
- */
-server.post('/projects/:id/tasks', checkProjectExists, (req, res) => {
-  const { id } = req.params;
-  const { title } = req.body;
-
-  const project = projects.find(p => p.id == id);
-
-  project.tasks.push(title);
-
-  return res.json(project);
-});
-
-server.listen(4000);
+server.listen(3000);
