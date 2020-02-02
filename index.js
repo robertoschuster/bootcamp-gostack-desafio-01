@@ -18,10 +18,8 @@ const projects = [];
  * Middlewares
  *  
  ******************************************************************************/
-var reqCount = 0;
 server.use((req, res, next) => {
-   reqCount++;
-   console.log(`Total de Requisições: ${reqCount}`);
+   console.count('Total de Requisições');
    return next();
 })
 
@@ -44,14 +42,11 @@ function checkProjectRequiredParams(req, res, next) {
 function checkProjectIdExists(req, res, next) {
 
   const { id } = req.params;
-  const index = projects.map((e) => { return e.id }).indexOf(id);
+  const project = projects.find(proj => proj.id == id);
 
-  if (index === -1) {
+  if (!project) {
     return res.status(400).json(`Project ${id} does not exists.`);
   }
-
-  req.project = projects[index];
-  req.projectIndex = index;
 
   return next();
 
@@ -60,9 +55,9 @@ function checkProjectIdExists(req, res, next) {
 function checkProjectRepeated(req, res, next) {
 
   const { id } = req.body;
-  const index = projects.map((e) => { return e.id }).indexOf(id);
+  const project = projects.find(proj => proj.id == id);
 
-  if (index !== -1) {
+  if (project) {
     return res.status(400).json(`Id ${id} already exists.`);
   }
 
@@ -92,44 +87,45 @@ server.post('/projects', checkProjectRequiredParams, checkProjectRepeated, (req,
   const project = { id, title, tasks: [] };
   projects.push(project);
   
-  return res.json(projects);
+  return res.json(project);
 
 })
 
 // PUT
 server.put('/projects/:id', checkProjectRequiredParams, checkProjectIdExists, (req, res) => {
 
+  const { id } = req.params;
   const { title } = req.body;
 
-  // req.project foi definido no middleware checkProjectIdExists
-  if (req.project)
-    req.project.title = title;
+  const project = projects.find(proj => proj.id == id);
+  project.title = title;
   
-  return res.json(projects);
+  return res.json(project);
 
 })
 
 // DELETE
 server.delete('/projects/:id', checkProjectIdExists, (req, res) => {
 
-  // req.project foi definido no middleware checkProjectIdExists
-  if (req.projectIndex)
-    projects.splice(req.projectIndex, 1);
+  const { id } = req.params;
+  const index = projects.findIndex(proj => proj.id == id);
 
-  return res.status(200).json();
+  projects.splice(index, 1);
+
+  return res.status(200).send();
 
 })
 
 // POST (tasks)
 server.post('/projects/:id/tasks', checkProjectIdExists, (req, res) => {
-
+ 
+  const { id } = req.params;
   const { title } = req.body;
 
-  // req.project foi definido no middleware checkProjectIdExists
-  if (req.project)
-    req.project.tasks.push(title);
+  const project = projects.find(proj => proj.id == id);
+  project.tasks.push(title);
   
-  return res.json(projects);
+  return res.json(project);
   
 })
 
